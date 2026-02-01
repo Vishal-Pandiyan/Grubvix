@@ -1,4 +1,4 @@
-# grubvix - GRUB Theme Manager CLI
+# Grubvix - GRUB Theme Manager CLI
 
 A professional, production-ready command-line utility for managing GRUB bootloader themes on Linux systems.
 
