@@ -8,7 +8,22 @@
 #  ██████  ██   ██  ██████  ██████    ████   ██ ██   ██
 #
 # GRUB Theme Manager CLI - Next Generation
-# Version: 1.0.0 | License: MIT
+# Version: 2.0.0
+#
+# Copyright (C) 2024-2026 grubvix contributors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 ################################################################################
 
 set -euo pipefail
@@ -23,7 +38,7 @@ readonly GRUB_CONFIG="/etc/default/grub"
 readonly GRUB_THEMES_DIR="/boot/grub/themes"
 readonly BACKUP_DIR="/var/backups/grubvix"
 readonly TMP_DIR="/tmp/grubvix-$$"
-readonly VERSION="1.0.0"
+readonly VERSION="2.0.0"
 
 # ============================================================================
 # ADVANCED COLOR PALETTE & STYLES
@@ -104,7 +119,6 @@ readonly SYM_FIRE='🔥'
 # Operation flags
 THEME_NAME=""
 LOCAL_PATH=""
-GIT_URL=""
 RESOLUTION=""
 FONT_SIZE=""
 MODE=""
@@ -267,7 +281,7 @@ print_footer() {
         print_center "${C_INFO}${SYM_INFO} ${C_BRIGHT_CYAN}Operation completed${C_RESET}"
     fi
     
-    print_center "${C_DIM}grubvix v${VERSION} | Made with ${C_RED}♥${C_RESET}${C_DIM} for Linux${C_RESET}"
+    print_center "${C_DIM}grubvix v${VERSION} | Made with ${C_RED}♥${C_RESET}${C_DIM} for Linux | GPL-3.0${C_RESET}"
     print_line "═" "$C_BRAND"
     echo ""
 }
@@ -298,22 +312,36 @@ check_root() {
 }
 
 check_dependencies() {
-    local deps=("grub-mkconfig" "grub-mkfont")
     local missing=()
     
     print_section "System Check" "$SYM_GEAR"
     
-    for cmd in "${deps[@]}"; do
+    # Check for GRUB config tool (at least one must exist)
+    local has_grub_tool=false
+    for cmd in "update-grub" "grub-mkconfig" "grub2-mkconfig"; do
         if command -v "$cmd" &> /dev/null; then
             print_success "Found: ${cmd}"
-        else
-            print_error "Missing: ${cmd}"
-            missing+=("$cmd")
+            has_grub_tool=true
         fi
     done
     
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        error_exit "Missing required commands: ${missing[*]}"
+    if [[ "$has_grub_tool" == "false" ]]; then
+        print_error "Missing: update-grub / grub-mkconfig / grub2-mkconfig"
+        error_exit "No GRUB configuration tool found. Please install GRUB."
+    fi
+    
+    # Check for font tool (at least one must exist)
+    local has_font_tool=false
+    for cmd in "grub-mkfont" "grub2-mkfont"; do
+        if command -v "$cmd" &> /dev/null; then
+            print_success "Found: ${cmd}"
+            has_font_tool=true
+            break
+        fi
+    done
+    
+    if [[ "$has_font_tool" == "false" ]]; then
+        print_warning "grub-mkfont not found (font customization disabled)"
     fi
 }
 
@@ -421,36 +449,6 @@ apply_local_theme() {
     update_grub_theme_config "${theme_name}"
 }
 
-apply_git_theme() {
-    local theme_name="$1"
-    local git_url="$2"
-    
-    print_header_box "Applying Git Theme" "Repository: ${git_url}"
-    
-    if ! command -v git &> /dev/null; then
-        error_exit "Git is not installed. Install it with: sudo apt install git"
-    fi
-    
-    print_section "Git Clone" "$SYM_PACKAGE"
-    
-    mkdir -p "${TMP_DIR}"
-    
-    print_info "Cloning repository..."
-    (
-        git clone --depth 1 "${git_url}" "${TMP_DIR}/repo" &> /dev/null
-    ) &
-    local git_pid=$!
-    show_spinner $git_pid "Downloading theme from Git"
-    
-    wait $git_pid || error_exit "Failed to clone repository: ${git_url}"
-    
-    print_success "Repository cloned successfully"
-    
-    validate_theme "${TMP_DIR}/repo"
-    install_theme "${TMP_DIR}/repo" "${theme_name}"
-    update_grub_theme_config "${theme_name}"
-}
-
 # ============================================================================
 # CONFIGURATION FUNCTIONS
 # ============================================================================
@@ -479,21 +477,41 @@ set_grub_font() {
     
     print_section "Font Generation" "$SYM_GEAR"
     
+    # Determine which mkfont command to use
+    local mkfont_cmd=""
+    if command -v grub-mkfont &> /dev/null; then
+        mkfont_cmd="grub-mkfont"
+    elif command -v grub2-mkfont &> /dev/null; then
+        mkfont_cmd="grub2-mkfont"
+    else
+        error_exit "grub-mkfont or grub2-mkfont not found. Install GRUB tools."
+    fi
+    
     local font_source="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
     local font_dest="/boot/grub/fonts/custom_${font_size}.pf2"
+    
+    # Check for grub2 directory (RHEL/Fedora)
+    if [[ -d "/boot/grub2" && ! -d "/boot/grub" ]]; then
+        font_dest="/boot/grub2/fonts/custom_${font_size}.pf2"
+        mkdir -p "/boot/grub2/fonts"
+    else
+        mkdir -p "/boot/grub/fonts"
+    fi
     
     if [[ ! -f "${font_source}" ]]; then
         font_source="/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
         if [[ ! -f "${font_source}" ]]; then
-            error_exit "System font not found. Install DejaVu or Liberation fonts."
+            # Try TTF fonts location (common on RHEL/Fedora)
+            font_source="/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf"
+            if [[ ! -f "${font_source}" ]]; then
+                error_exit "System font not found. Install DejaVu or Liberation fonts."
+            fi
         fi
     fi
     
-    mkdir -p "/boot/grub/fonts"
-    
     print_info "Generating font (size: ${font_size})..."
     (
-        grub-mkfont -s "${font_size}" -o "${font_dest}" "${font_source}" &> /dev/null
+        $mkfont_cmd -s "${font_size}" -o "${font_dest}" "${font_source}" &> /dev/null
     ) &
     local font_pid=$!
     show_spinner $font_pid "Creating custom font"
@@ -578,22 +596,52 @@ update_grub() {
     
     print_info "Regenerating GRUB configuration..."
     
+    # Detect GRUB config path (varies by distro)
+    local grub_cfg=""
+    if [[ -f "/boot/grub/grub.cfg" ]]; then
+        grub_cfg="/boot/grub/grub.cfg"
+    elif [[ -f "/boot/grub2/grub.cfg" ]]; then
+        grub_cfg="/boot/grub2/grub.cfg"
+    elif [[ -f "/boot/efi/EFI/fedora/grub.cfg" ]]; then
+        grub_cfg="/boot/efi/EFI/fedora/grub.cfg"
+    elif [[ -f "/boot/efi/EFI/centos/grub.cfg" ]]; then
+        grub_cfg="/boot/efi/EFI/centos/grub.cfg"
+    elif [[ -f "/boot/efi/EFI/arch/grub.cfg" ]]; then
+        grub_cfg="/boot/efi/EFI/arch/grub.cfg"
+    fi
+    
+    # Try update-grub (Debian/Ubuntu)
     if command -v update-grub &> /dev/null; then
         (
             update-grub &> /dev/null
         ) &
         local grub_pid=$!
-        show_spinner $grub_pid "Running update-grub"
+        show_spinner $grub_pid "Running update-grub (Debian/Ubuntu)"
         wait $grub_pid || error_exit "Failed to update GRUB"
+    # Try grub-mkconfig (Arch/Fedora/RHEL/etc)
     elif command -v grub-mkconfig &> /dev/null; then
+        if [[ -z "$grub_cfg" ]]; then
+            error_exit "Could not detect GRUB config file location"
+        fi
         (
-            grub-mkconfig -o /boot/grub/grub.cfg &> /dev/null
+            grub-mkconfig -o "$grub_cfg" &> /dev/null
         ) &
         local grub_pid=$!
         show_spinner $grub_pid "Running grub-mkconfig"
         wait $grub_pid || error_exit "Failed to update GRUB"
+    # Try grub2-mkconfig (Fedora/RHEL/CentOS)
+    elif command -v grub2-mkconfig &> /dev/null; then
+        if [[ -z "$grub_cfg" ]]; then
+            grub_cfg="/boot/grub2/grub.cfg"
+        fi
+        (
+            grub2-mkconfig -o "$grub_cfg" &> /dev/null
+        ) &
+        local grub_pid=$!
+        show_spinner $grub_pid "Running grub2-mkconfig (RHEL/Fedora)"
+        wait $grub_pid || error_exit "Failed to update GRUB"
     else
-        error_exit "Could not find update-grub or grub-mkconfig"
+        error_exit "Could not find update-grub, grub-mkconfig, or grub2-mkconfig"
     fi
     
     print_success "GRUB bootloader updated successfully"
@@ -618,7 +666,7 @@ EOF
     echo -e "${C_RESET}"
     
     print_center "${C_BOLD}${C_BRIGHT_CYAN}GRUB Theme Manager CLI${C_RESET}"
-    print_center "${C_DIM}Version ${VERSION}${C_RESET}"
+    print_center "${C_DIM}Version ${VERSION} | GPL-3.0 License${C_RESET}"
     print_line "═" "$C_BRAND"
     
     cat << EOF
@@ -629,9 +677,8 @@ ${C_BOLD}${C_BRIGHT_YELLOW}USAGE:${C_RESET}
 ${C_BOLD}${C_BRIGHT_YELLOW}MAIN MODE:${C_RESET}
     ${C_BRIGHT_GREEN}-t${C_RESET} ${C_DIM}NAME${C_RESET}        Apply theme (from built-in collection)
 
-${C_BOLD}${C_BRIGHT_YELLOW}SOURCE MODIFIERS:${C_RESET} ${C_DIM}(use with -t)${C_RESET}
+${C_BOLD}${C_BRIGHT_YELLOW}SOURCE MODIFIER:${C_RESET} ${C_DIM}(use with -t)${C_RESET}
     ${C_BRIGHT_GREEN}-p${C_RESET} ${C_DIM}PATH${C_RESET}        Apply theme from local folder
-    ${C_BRIGHT_GREEN}-g${C_RESET} ${C_DIM}URL${C_RESET}         Apply theme from Git repository
 
 ${C_BOLD}${C_BRIGHT_YELLOW}OTHER COMMANDS:${C_RESET}
     ${C_BRIGHT_GREEN}-l${C_RESET}              List available built-in themes
@@ -649,19 +696,19 @@ ${C_BOLD}${C_BRIGHT_YELLOW}EXAMPLES:${C_RESET}
     ${C_DIM}# Apply theme from local path${C_RESET}
     ${C_BRIGHT_CYAN}sudo grubvix.sh -t mytheme -p /path/to/theme${C_RESET}
 
-    ${C_DIM}# Apply theme from Git repository${C_RESET}
-    ${C_BRIGHT_CYAN}sudo grubvix.sh -t mytheme -g https://github.com/user/theme.git${C_RESET}
-
     ${C_DIM}# Set resolution and font size${C_RESET}
     ${C_BRIGHT_CYAN}sudo grubvix.sh -r 1920x1080 -f 24${C_RESET}
 
     ${C_DIM}# Apply theme with custom settings${C_RESET}
     ${C_BRIGHT_CYAN}sudo grubvix.sh -t mytheme -r 2560x1440 -f 32${C_RESET}
 
+    ${C_DIM}# List available themes${C_RESET}
+    ${C_BRIGHT_CYAN}grubvix.sh -l${C_RESET}
+
 EOF
 
     print_line "═" "$C_BRAND"
-    print_center "${C_DIM}Made with ${C_RED}♥${C_RESET}${C_DIM} for Linux${C_RESET}"
+    print_center "${C_DIM}Made with ${C_RED}♥${C_RESET}${C_DIM} for Linux | GPL-3.0${C_RESET}"
     print_line "═" "$C_BRAND"
     echo ""
 }
@@ -676,11 +723,10 @@ parse_arguments() {
         exit 0
     fi
     
-    while getopts ":t:p:g:r:f:ldbh" opt; do
+    while getopts ":t:p:r:f:ldbh" opt; do
         case ${opt} in
             t) THEME_NAME="${OPTARG}"; MODE="theme" ;;
             p) LOCAL_PATH="${OPTARG}" ;;
-            g) GIT_URL="${OPTARG}" ;;
             r) RESOLUTION="${OPTARG}" ;;
             f) FONT_SIZE="${OPTARG}" ;;
             l) MODE="list" ;;
@@ -727,15 +773,9 @@ main() {
                 error_exit "Theme name required with -t option"
             fi
             
-            if [[ -n "${LOCAL_PATH}" && -n "${GIT_URL}" ]]; then
-                error_exit "Cannot use both -p and -g together"
-            fi
-            
             backup_grub_config
             
-            if [[ -n "${GIT_URL}" ]]; then
-                apply_git_theme "${THEME_NAME}" "${GIT_URL}"
-            elif [[ -n "${LOCAL_PATH}" ]]; then
+            if [[ -n "${LOCAL_PATH}" ]]; then
                 apply_local_theme "${THEME_NAME}" "${LOCAL_PATH}"
             else
                 apply_builtin_theme "${THEME_NAME}"
