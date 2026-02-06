@@ -1,17 +1,16 @@
 # Grubvix - GRUB Theme Manager CLI
 
-A professional, production-ready command-line utility for managing GRUB bootloader themes on Linux systems.
+A professional, production-ready command-line utility for managing GRUB bootloader themes on Linux systems with a stunning modern terminal UI.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
 ![Bash](https://img.shields.io/badge/bash-5.0%2B-green.svg)
 ![Platform](https://img.shields.io/badge/platform-linux-lightgrey.svg)
 
 ## Features
 
-✨ **Multiple Theme Sources**
-- Built-in themes from repository
-- Local filesystem paths
-- Remote Git repositories
+✨ **Built-in Theme Collection**
+- Curated GRUB themes bundled with grubvix
+- Ready to use out of the box
 
 🛡️ **Safety First**
 - Automatic backups before any changes
@@ -25,11 +24,17 @@ A professional, production-ready command-line utility for managing GRUB bootload
 - Theme restoration
 - Professional CLI interface
 
-## Installation
+🎨 **Unique Terminal UI**
+- 256-color support with electric blue branding
+- Animated spinners and progress bars
+- Unicode box drawing characters
+- Real-time visual feedback
+
+## 🌐 Installation 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/Vishal-Pandiyan/Grubvix.git
+git clone https://github.com/Vishal-Pandiyan/Grub-vix.git
 cd grubvix
 ```
 
@@ -49,7 +54,7 @@ sudo ln -s $(pwd)/grubvix.sh /usr/local/bin/grubvix
 
 **Apply a built-in theme:**
 ```bash
-sudo ./grubvix.sh -t theme-name
+sudo ./grubvix.sh -t mytheme
 ```
 
 **List available built-in themes:**
@@ -71,12 +76,7 @@ sudo ./grubvix.sh -d
 
 **Apply theme from local path:**
 ```bash
-sudo ./grubvix.sh -t theme-name -p /path/to/theme/folder
-```
-
-**Apply theme from Git repository:**
-```bash
-sudo ./grubvix.sh -t them-ename -g [Git url]
+sudo ./grubvix.sh -t mytheme -p /path/to/theme/folder
 ```
 
 **Set GRUB resolution:**
@@ -91,7 +91,7 @@ sudo ./grubvix.sh -f 24
 
 **Apply theme with custom resolution and font:**
 ```bash
-sudo ./grubvix.sh -t theme-name -r 2560x1440 -f 32
+sudo ./grubvix.sh -t mytheme -r 2560x1440 -f 32
 ```
 
 **Create backup manually:**
@@ -99,27 +99,14 @@ sudo ./grubvix.sh -t theme-name -r 2560x1440 -f 32
 sudo ./grubvix.sh -b
 ```
 
-## Theme Structure
-
-Each theme must follow this structure:
-
-```
-theme-name/
-├── theme.txt           # Required: GRUB theme configuration
-├── background.png      # Optional: Background image
-├── icons/              # Optional: Icon directory
-└── fonts/              # Optional: Custom fonts
-```
-
 The `theme.txt` file is mandatory and contains GRUB theme specifications.
 
-## Command Reference
+## 🔖Command Reference
 
 | Flag | Description | Example |
 |------|-------------|---------|
-| `-t NAME` | Apply theme | `-t theme-name` |
+| `-t NAME` | Apply theme | `-t mytheme` |
 | `-p PATH` | Use local path | `-p /home/user/themes/custom` |
-| `-g URL` | Use Git repository | `-g https://github.com/user/theme.git` |
 | `-l` | List built-in themes | `-l` |
 | `-d` | Restore default theme | `-d` |
 | `-r WxH` | Set resolution | `-r 1920x1080` |
@@ -129,14 +116,26 @@ The `theme.txt` file is mandatory and contains GRUB theme specifications.
 
 ## Requirements
 
-- **Operating System**: Linux (any distribution with GRUB)
+- **Operating System**: Linux (any distribution with GRUB/GRUB2)
 - **Privileges**: Root/sudo access required
 - **Dependencies**:
-  - `grub-mkconfig` or `update-grub`
-  - `grub-mkfont` (for font size changes)
-  - `git` (for Git repository theme installation)
+  - `grub-mkconfig`, `grub2-mkconfig`, or `update-grub`
+  - `grub-mkfont` or `grub2-mkfont` (for font size changes)
 
-## Backup and Recovery
+### ✅ Supported Distributions
+
+grubvix works on **99% of Linux distributions** including:
+
+**Debian-based:** Ubuntu, Debian, Linux Mint, Pop!_OS, Elementary OS, Kali Linux  
+**Arch-based:** Arch Linux, Manjaro, EndeavourOS, Garuda Linux  
+**RHEL-based:** Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux  
+**Others:** openSUSE, Gentoo, Void Linux, Solus, NixOS
+
+The script automatically detects your distribution and uses the appropriate GRUB commands.
+
+Read the [System Compatibility](Documentation/COMPATIBILITY.md) for detailed guidelines
+
+## 🗃️ Backup and Recovery
 
 ### Automatic Backups
 
@@ -161,7 +160,7 @@ Common GRUB resolutions:
 - `1366x768` (HD)
 - `1280x720` (HD)
 
-## Troubleshooting
+## ⚙️ Troubleshooting
 
 **Theme doesn't appear after reboot:**
 - Ensure theme files are valid
@@ -178,12 +177,16 @@ Common GRUB resolutions:
 - Always run with `sudo`
 - Check file permissions on theme directories
 
-**Git clone fails:**
-- Verify Git is installed: `sudo apt install git`
-- Check internet connection
-- Verify repository URL is correct
+## 📦 Bundled Themes
 
-## Contributing
+grubvix includes curated GRUB themes. See `Themes/README.md` for:
+- List of bundled themes
+- Theme credits and licenses
+- How to add your own themes
+
+**All bundled themes are GPL-3.0 licensed** (or compatible licenses).
+
+## 👥 Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
 
@@ -193,17 +196,45 @@ Contributions are welcome! Please feel free to submit pull requests or open issu
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+Read the [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Useful Links 📌
+- 📦 [Installation Guide](Documentation/INSTALL.md) – Step-by-step setup instructions   
+- 💡 [Usage Examples](Documentation/USAGE_EXAMPLES.md) – Real command examples for common tasks
+- 🖥️ [System Compatibility](Documentation/COMPATIBILITY.md) – Supported distros, GRUB versions, and requirements
+- 🙌 [Credits & Attributions](Documentation/CREDITS.md) – Theme authors and third-party resources  
 
-## Acknowledgments
+
+## ⚖️ License 
+
+This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
+
+### What This Means:
+
+✅ **You can:**
+- Use grubvix freely
+- Modify the source code
+- Distribute copies
+- Use commercially
+
+⚠️ **You must:**
+- Keep the GPL-3.0 license
+- Provide source code when distributing
+- State changes made to the code
+- Use GPL-3.0 for derivative works
+
+### 📦 Bundled Themes
+
+All themes in the `Themes/` directory are GPL-3.0 licensed (or compatible open-source licenses). See `Themes/CREDITS.md` for attribution to original theme creators.
+
+## ✨ Acknowledgments
 
 - GRUB development team
 - Linux community
-- Theme creators
+- Theme creators (see `Themes/CREDITS.md`)
+- Contributors to grubvix
 
-## Support
+## 🏷️ Support
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
@@ -212,4 +243,6 @@ For issues, questions, or suggestions:
 
 ---
 
-**Note**: Always backup important data before modifying bootloader configuration. While grubvix includes safety features, bootloader modifications should be performed with caution.
+**Note 📝**: Always backup important data before modifying bootloader configuration. While grubvix includes safety features, bootloader modifications should be performed with caution.
+
+**Made with ♥ for Linux**
