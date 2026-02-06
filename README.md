@@ -202,7 +202,8 @@ Read the [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 - 📦 [Installation Guide](Documentation/INSTALL.md) – Step-by-step setup instructions   
 - 💡 [Usage Examples](Documentation/USAGE_EXAMPLES.md) – Real command examples for common tasks
 - 🖥️ [System Compatibility](Documentation/COMPATIBILITY.md) – Supported distros, GRUB versions, and requirements
-- 🙌 [Credits & Attributions](Documentation/CREDITS.md) – Theme authors and third-party resources  
+- 🙌 [Credits & Attributions](Themes/CREDITS.md) – Theme authors and third-party resources  
+- 📝 [Changelog](CHANGELOG.md) – Version history and updates
 
 
 ## ⚖️ License 
